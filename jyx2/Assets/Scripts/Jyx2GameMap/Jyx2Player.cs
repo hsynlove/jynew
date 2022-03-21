@@ -12,11 +12,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Net;
 using Animancer;
+using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Serialization;
+using XLua;
 
 public class Jyx2Player : MonoBehaviour
 {
@@ -30,14 +32,8 @@ public class Jyx2Player : MonoBehaviour
     /// </summary>
     const float PLAYER_INTERACTIVE_ANGLE = 120f;
 
-    /// <summary>
-    /// 是否激活交互选项
-    /// </summary>
-    [HideInInspector]
-    public bool EnableInteractive { get; set; }
-
     private bool canControl = true;
-    
+
     public static Jyx2Player GetPlayer()
     {
         if (LevelMaster.Instance == null)
@@ -45,6 +41,21 @@ public class Jyx2Player : MonoBehaviour
         
         return LevelMaster.Instance.GetPlayer();
     }
+
+    public async UniTask OnSceneLoad()
+    {
+        //transform.rotation = Quaternion.Euler(Vector3.zero);
+        
+        //fix bug:无法正确触发开场的剧情，似乎异步加载scene的时候，触发器碰撞没有被激活
+        var c = GetComponent<Collider>();
+        await UniTask.WaitForEndOfFrame();
+        c.enabled = false;
+        await UniTask.WaitForEndOfFrame();
+        c.enabled = true;
+    }
+
+    public HybridAnimancerComponent m_Animancer;
+    public Animator m_Animator;
 
     
     public bool IsOnBoat;
@@ -135,7 +146,7 @@ public class Jyx2Player : MonoBehaviour
         _navMeshAgent = GetComponent<NavMeshAgent>();
         _boat = FindObjectOfType<Jyx2Boat>();
 
-        EnableInteractive = true;
+        _gameEventLayerMask = LayerMask.GetMask("GameEvent");
     }
 
     void Start()
@@ -166,21 +177,24 @@ public class Jyx2Player : MonoBehaviour
         if (!canControl)
             return;
 
-        BigMapIdleJudge();
+        //BigMapIdleJudge();
         
         //判断交互范围
         Debug.DrawRay(transform.position, transform.forward, Color.yellow);
-        
-        //获得当前可以触发的交互物体
-        var gameEvent = DetectInteractiveGameEvent();
-        if (gameEvent == null)
+
+        if (evtManager != null)
         {
-            evtManager.OnExitAllEvents();
-        }
-        else
-        {
-            //Debug.Log("find interactive trigger:" + gameEvent.name);
-            evtManager.OnTriggerEvent(gameEvent);
+            //获得当前可以触发的交互物体
+            var gameEvent = DetectInteractiveGameEvent();
+            if (gameEvent == null)
+            {
+                evtManager.OnExitAllEvents();
+            }
+            else
+            {
+                //Debug.Log("find interactive trigger:" + gameEvent.name);
+                evtManager.OnTriggerEvent(gameEvent);
+            }
         }
     }
 
@@ -189,21 +203,10 @@ public class Jyx2Player : MonoBehaviour
     private const float BIG_MAP_IDLE_TIME = 5f;
     private bool _playingbigMapIdle = false;
 
-    private Animator _playerAnimator;
-    private HybridAnimancerComponent _playerAnimancer;
-
-    private Animator GetPlayerAnimator()
-    {
-        if (_playerAnimator == null)
-            _playerAnimator = this.transform.GetChild(0).GetComponent<Animator>();
-        return _playerAnimator;
-    }
     
     private HybridAnimancerComponent GetPlayerAnimancer()
     {
-        if (_playerAnimancer == null)
-            _playerAnimancer = GameUtil.GetOrAddComponent<HybridAnimancerComponent>(this.transform.GetChild(0));
-        return _playerAnimancer;
+        return m_Animancer;
     }
     
     //在大地图上判断是否需要展示待机动作
@@ -211,10 +214,12 @@ public class Jyx2Player : MonoBehaviour
     {
         if(_boat == null) return; //暂实现：判断是否是大地图，有船才是大地图
 
+        var animator = m_Animator;
+        
         if (_playingbigMapIdle)
         {
             //判断是否有移动速度，有的话立刻打断目前IDLE动作
-            if (GetPlayerAnimator().GetFloat("speed") > 0)
+            if (animator!=null && animator.GetFloat("speed") > 0)
             {
                 var animancer = GetPlayerAnimancer();
                 animancer.Stop();
@@ -225,7 +230,7 @@ public class Jyx2Player : MonoBehaviour
         }
 
         //一旦开始移动，则重新计时
-        if (GetPlayerAnimator().GetFloat("speed") > 0)
+        if (animator!=null && animator.GetFloat("speed") > 0)
         {
             _bigmapIdleTimeCount = 0;
             return;
@@ -246,6 +251,8 @@ public class Jyx2Player : MonoBehaviour
     #region 事件交互
     
     private Collider[] targets = new Collider[10];
+
+    private int _gameEventLayerMask = -1;
     
     /// <summary>
     /// 在交互视野范围内寻找第一个可被交互物体
@@ -253,7 +260,7 @@ public class Jyx2Player : MonoBehaviour
     /// <returns></returns>
     GameEvent DetectInteractiveGameEvent()
     {
-        int count = Physics.OverlapSphereNonAlloc(transform.position, PLAYER_INTERACTIVE_RANGE, targets, LayerMask.GetMask("GameEvent"));
+        int count = Physics.OverlapSphereNonAlloc(transform.position, PLAYER_INTERACTIVE_RANGE, targets, _gameEventLayerMask);
         //添加
         for (int i = 0; i < count; i++)
         {
@@ -271,7 +278,6 @@ public class Jyx2Player : MonoBehaviour
 
     bool CanSee(Collider target)
     {
-
         //判断是否在视野角度内
         var isInViewField = Vector3.Angle(transform.forward, target.transform.position - transform.position) <= PLAYER_INTERACTIVE_ANGLE / 2;
         if(isInViewField) {
@@ -312,7 +318,7 @@ public class Jyx2Player : MonoBehaviour
 
     bool SetInteractiveGameEvent(Collider c)
     {
-        var evt = c.GetComponent<GameEvent>();
+        var evt = c.GetComponent<GameEvent>(); 
         if (evt == null)
             return false;
 

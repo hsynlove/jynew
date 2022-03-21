@@ -13,6 +13,9 @@ using UnityEngine;
 
 namespace Jyx2
 {
+    /// <summary>
+    /// 战斗结果
+    /// </summary>
     public enum BattleResult
     {
         Win,
@@ -20,6 +23,9 @@ namespace Jyx2
         InProgress,
     }
     
+    /// <summary>
+    /// 战场数据核心逻辑
+    /// </summary>
     public class BattleFieldModel
     {
         //行动集气
@@ -27,6 +33,9 @@ namespace Jyx2
 
         //参与战斗的角色
         public List<RoleInstance> Roles = new List<RoleInstance>();
+
+        //死亡的角色
+        public List<RoleInstance> Dead = new List<RoleInstance>();
 
         public List<RoleInstance> AliveRoles
         {
@@ -219,10 +228,9 @@ namespace Jyx2
                 {
                     GameObject.Destroy(role.View.gameObject);
                 }
-                int index = Roles.IndexOf(role);
-                index++;
-                if (index < Roles.Count)
-                    role = Roles[index];
+                Dead.Add(Roles[0]);
+                Roles.RemoveAt(0);
+                role = Roles[0];
             }
 
             if (role.isActed) //全部都行动过了

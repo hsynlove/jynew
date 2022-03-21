@@ -24,14 +24,23 @@ namespace Jyx2
         private HybridAnimancerComponent _animancer;
         public HybridAnimancerComponent GetAnimancer()
         {
-            if (_animancer == null)
-            {
-                var animator = GetAnimator();
-                _animancer = GameUtil.GetOrAddComponent<HybridAnimancerComponent>(animator.transform);
+            //TODO:判断是否销毁了_animacer，替换模型_animacer不会立即消失……,所以直接每次都get一次
+            var animator = GetAnimator();
+            _animancer = GameUtil.GetOrAddComponent<HybridAnimancerComponent>(animator.transform);
+            
+            if(_animancer.Animator == null)
                 _animancer.Animator = animator;
+            
+            if(_animancer.Controller == null)
                 _animancer.Controller = animator.runtimeAnimatorController;
-            }
+            
             return _animancer;
+        }
+
+        protected void InitAnimantionSystem()
+        {
+            GetAnimator();
+            GetAnimancer();
         }
         
         /// <summary>

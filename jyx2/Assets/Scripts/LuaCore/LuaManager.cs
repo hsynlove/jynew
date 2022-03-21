@@ -16,6 +16,8 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using XLua;
+using Jyx2.MOD;
+using Jyx2.Middleware;
 
 namespace Jyx2
 {
@@ -160,10 +162,10 @@ namespace Jyx2
         public static byte[] LoadLua(string path)
         {
             //BY CG：在unity编辑模式下，方便调试，不用repack lua
-            if (Application.isEditor)
+/*            if (Application.isEditor)
             {
                 return File.ReadAllBytes("Assets/BuildSource/Lua/" + path + ".lua");
-            }
+            }*/
 
             //处理文件名格式
             if (!path.Contains("/"))
@@ -213,12 +215,11 @@ namespace Jyx2
 
         public static async UniTask InitLuaMapper()
         {
-            if (Application.isEditor) //编辑器模式下不需要缓存，直接读取文件
-                return;
+            /*            if (Application.isEditor) //编辑器模式下不需要缓存，直接读取文件
+                            return;*/
+            var overridePaths = await MODLoader.LoadOverrideList("Assets/BuildSource/Lua");
             
-            var assets = await Addressables
-                .LoadAssetsAsync<TextAsset>(new List<object>() {"lua"}, null,
-                    Addressables.MergeMode.Union).Task;
+            var assets = await MODLoader.LoadAssets<TextAsset>(overridePaths);
 
             __luaMapper = new Dictionary<string, byte[]>();
             foreach (var a in assets)

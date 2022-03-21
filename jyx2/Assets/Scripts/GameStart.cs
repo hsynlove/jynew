@@ -16,37 +16,34 @@ using DG.Tweening;
 using UnityEngine;
 using Jyx2;
 using Jyx2.Middleware;
+using Jyx2.MOD;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 using Image = UnityEngine.UI.Image;
 
 public class GameStart : MonoBehaviour
 {
-    public CanvasGroup introPanel;
-    
-    void Start()
-    {
-        StartAsync().Forget();
-    }
+	public CanvasGroup introPanel;
 
-    async UniTask StartAsync()
-    {
-        introPanel.gameObject.SetActive(true);
+	void Start()
+	{
+		StartAsync().Forget();
+	}
 
-        introPanel.alpha = 0;
-        await introPanel.DOFade(1, 1f).SetEase(Ease.Linear);
-        await UniTask.Delay(TimeSpan.FromSeconds(1f));
-        await introPanel.DOFade(0, 1f).SetEase(Ease.Linear).OnComplete(() =>
-        {
-            Destroy(introPanel.gameObject);
-        });
-#if UNITY_EDITOR
+	async UniTask StartAsync()
+	{
+		introPanel.gameObject.SetActive(true);
 
-#else
-        //运行时，需要手动调用
-        BeforeSceneLoad.ColdBind();
-#endif
-        //Jyx2_UIManager.Instance.GameStart();
-        SceneManager.LoadScene("0_MainMenu");
-    }
+		introPanel.alpha = 0;
+		await introPanel.DOFade(1, 1f).SetEase(Ease.Linear);
+		await UniTask.Delay(TimeSpan.FromSeconds(1f));
+		await introPanel.DOFade(0, 1f).SetEase(Ease.Linear).OnComplete(() =>
+		{
+			Destroy(introPanel.gameObject);
+		});
+		
+		await MODManager.Init();
+		BeforeSceneLoad.ColdBind();
+		SceneManager.LoadScene("0_MainMenu");
+	}
 }

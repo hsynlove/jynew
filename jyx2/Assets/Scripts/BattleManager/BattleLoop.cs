@@ -76,7 +76,8 @@ namespace Jyx2.Battle
                 {
                     await RoleManualAction(role); //人工操作
                 }
-
+                //角色运动完以后记录当前回合的生命值
+                role.PreviousRoundHp = role.Hp;
                 //标记角色已经行动过
                 model.OnActioned(role);
             }
@@ -92,7 +93,7 @@ namespace Jyx2.Battle
             CameraHelper.Instance.ChangeFollow(role.View.transform);
 
             //展示UI头像
-            Jyx2_UIManager.Instance.ShowUI(nameof(BattleMainUIPanel), BattleMainUIState.ShowRole, role);
+            await Jyx2_UIManager.Instance.ShowUIAsync(nameof(BattleMainUIPanel), BattleMainUIState.ShowRole, role);
 
             //选中框 跟随目标
             m_roleFocusRing.transform.SetParent(role.View.transform, false);
@@ -159,10 +160,10 @@ namespace Jyx2.Battle
                 //使用道具
                 await RoleUseItem(role, aiResult.Item);
             }
-            else if (aiResult.Zhaoshi != null)
+            else if (aiResult.SkillCast != null)
             {
                 //使用技能
-                await RoleCastSkill(role, aiResult.Zhaoshi, new BattleBlockVector(aiResult.AttackX, aiResult.AttackY));
+                await RoleCastSkill(role, aiResult.SkillCast, new BattleBlockVector(aiResult.AttackX, aiResult.AttackY));
             }
             else
             {
@@ -205,7 +206,7 @@ namespace Jyx2.Battle
         }
 
         //角色施展技能总逻辑
-        async UniTask RoleCastSkill(RoleInstance role, BattleZhaoshiInstance skill, BattleBlockVector skillTo)
+        async UniTask RoleCastSkill(RoleInstance role, SkillCastInstance skill, BattleBlockVector skillTo)
         {
             if (role == null || skill == null || skillTo == null)
             {
@@ -229,7 +230,7 @@ namespace Jyx2.Battle
         }
 
         //一次施展技能
-        async UniTask CastOnce(RoleInstance role, BattleZhaoshiInstance skill, BattleBlockVector skillTo)
+        async UniTask CastOnce(RoleInstance role, SkillCastInstance skill, BattleBlockVector skillTo)
         {
             List<RoleInstance> beHitAnimationList = new List<RoleInstance>();
             //获取攻击范围
@@ -265,7 +266,7 @@ namespace Jyx2.Battle
             {
                 Source = role.View,
                 CoverBlocks = coverBlocks.ToTransforms(),
-                Zhaoshi = skill,
+                Skill = skill,
                 Targets = beHitAnimationList.ToMapRoles(),
             };
 
@@ -273,7 +274,7 @@ namespace Jyx2.Battle
         }
 
         //判断是否可以左右互搏
-        bool Zuoyouhubo(RoleInstance role, BattleZhaoshiInstance skill)
+        bool Zuoyouhubo(RoleInstance role, SkillCastInstance skill)
         {
             return (role.Zuoyouhubo > 0 && (skill.Data.GetSkill().DamageType == 0 || (int)skill.Data.GetSkill().DamageType == 1));
         }
@@ -415,7 +416,7 @@ namespace Jyx2.Battle
             Action<ManualResult> callback = delegate(ManualResult result) { t.TrySetResult(result); };
             
             //显示技能动作面板，同时接受格子输入
-            Jyx2_UIManager.Instance.ShowUI(nameof(BattleActionUIPanel),role, moveRange, isSelectMove, callback);
+            await Jyx2_UIManager.Instance.ShowUIAsync(nameof(BattleActionUIPanel),role, moveRange, isSelectMove, callback);
             
             //等待完成
             await t.Task;

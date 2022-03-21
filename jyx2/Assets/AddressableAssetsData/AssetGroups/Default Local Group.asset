@@ -130,16 +130,10 @@ MonoBehaviour:
     m_Address: Assets/Jyx2Scenes
     m_ReadOnly: 0
     m_SerializedLabels: []
-    m_MainAsset: {fileID: 102900000, guid: 52ff8a63e5d91224eafa3d57c1662c29, type: 3}
-    m_TargetAsset: {fileID: 102900000, guid: 52ff8a63e5d91224eafa3d57c1662c29, type: 3}
-  - m_GUID: 45031f297f3ec834a9cd3b06379f7073
-    m_Address: Assets/AddressableAssetsData
-    m_ReadOnly: 0
-    m_SerializedLabels: []
     m_MainAsset: {fileID: 0}
     m_TargetAsset: {fileID: 0}
-  - m_GUID: f9568c6f93a96634289fefba7b82f055
-    m_Address: Assets/Scripts
+  - m_GUID: 45031f297f3ec834a9cd3b06379f7073
+    m_Address: Assets/AddressableAssetsData
     m_ReadOnly: 0
     m_SerializedLabels: []
     m_MainAsset: {fileID: 0}
@@ -162,6 +156,30 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels:
     - lua
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
+  - m_GUID: a7b6482a516aa3f4d9a142641bcb1267
+    m_Address: Assets/BuildSource/Gamepad/confirm.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
+  - m_GUID: 4d96bdec57161494d996b2e9ac5c5df5
+    m_Address: Assets/BuildSource/Gamepad/cancel.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
+  - m_GUID: 6e6a3ca907f650b449a5d469b9e478b2
+    m_Address: Assets/BuildSource/Gamepad/action.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    m_MainAsset: {fileID: 0}
+    m_TargetAsset: {fileID: 0}
+  - m_GUID: ceed1856fcadf7d44a8e1bee89da0cb6
+    m_Address: Assets/BuildSource/Gamepad/jump.png
+    m_ReadOnly: 0
+    m_SerializedLabels: []
     m_MainAsset: {fileID: 0}
     m_TargetAsset: {fileID: 0}
   m_ReadOnly: 0

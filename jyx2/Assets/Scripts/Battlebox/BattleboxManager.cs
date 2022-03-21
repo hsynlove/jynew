@@ -14,7 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ch.sycoforge.Decal;
-
+using Cysharp.Threading.Tasks;
 using Jyx2;
 using ProtoBuf;
 using UnityEngine;
@@ -92,16 +92,13 @@ public class BattleboxManager : MonoBehaviour
         return false;
     }
 
-    public void InitFromFile()
+    public async UniTask InitFromFile()
     {
         var filePath = GetFilePath();
 
-        Jyx2ResourceHelper.GetBattleboxDataset(filePath, r =>
-        {
-            m_Dataset = r;
-            if(m_Dataset != null)
-                Debug.Log($"载入文件结束：{m_Dataset.GetCount()}个格子中，一共有多少格子有效：{m_Dataset.GetValidCount()}");
-        });
+        m_Dataset = await Jyx2ResourceHelper.GetBattleboxDataset(filePath);
+        if(m_Dataset != null)
+            Debug.Log($"载入文件结束：{m_Dataset.GetCount()}个格子中，一共有多少格子有效：{m_Dataset.GetValidCount()}");
     }
 
     public void SaveToFile()
@@ -445,13 +442,23 @@ public class BattleboxManager : MonoBehaviour
     public void SetAllBlockColor(Color color, bool isRangeBlocks = false)
     {
         foreach (var block in isRangeBlocks ? _rangeLayerBlocks : _battleBlocks)
-        {
-            block.gameObject.GetComponent<EasyDecal>().DecalRenderer.material.SetColor("_TintColor", color); 
-            //block.gameObject.GetComponent<EasyDecal>().DecalMaterial.SetColor("_TintColor", color);
-        }
-    }
+		{
+			setBlockColor(color, block);
+			//block.gameObject.GetComponent<EasyDecal>().DecalMaterial.SetColor("_TintColor", color);
+		}
+	}
 
-    private List<BattleBlockVector> _battleBoxBlockList = new List<BattleBlockVector>();
+	private void setBlockColor(Color color, BattleBlockData block)
+	{
+		block.gameObject.GetComponent<EasyDecal>().DecalRenderer.material.SetColor("_TintColor", color);
+	}
+
+    public void SetBlockInaccessible(BattleBlockData block)
+	{
+        setBlockColor(new Color(0, 0, 0, 0), block);
+	}
+
+	private readonly List<BattleBlockVector> _battleBoxBlockList = new List<BattleBlockVector>();
 
     public void CreateBlockMap(int x, int y, int ox, int oy, int range)
     {

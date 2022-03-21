@@ -14,7 +14,7 @@ using Sirenix.OdinInspector;
 
 public class Jyx2SkillEditor : MonoBehaviour
 {
-    public MapRole player;
+    public BattleRole player;
 
     public Jyx2SkillEditorEnemy[] enemys;
 
@@ -47,7 +47,7 @@ public class Jyx2SkillEditor : MonoBehaviour
 
         await BeforeSceneLoad.loadFinishTask;
         
-        Jyx2_UIManager.Instance.ShowUI(nameof(SkillEditorUIPanel),player,enemys);
+        await Jyx2_UIManager.Instance.ShowUIAsync(nameof(SkillEditorUIPanel),player,enemys);
     }
 
     /*

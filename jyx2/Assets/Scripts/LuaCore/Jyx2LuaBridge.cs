@@ -19,6 +19,7 @@ using XLua;
 using UnityEngine.Playables;
 using Sirenix.Utilities;
 using Cysharp.Threading.Tasks;
+using i18n.TranslatorDef;
 using Jyx2Configs;
 using Jyx2.Middleware;
 
@@ -47,15 +48,17 @@ namespace Jyx2
 
         public static void Talk(int roleId, string content, string talkName, int type)
         {
-            RunInMainThread(() =>
+            async void Run()
             {
                 storyEngine.BlockPlayerControl = true;
-                Jyx2_UIManager.Instance.ShowUI(nameof(ChatUIPanel), ChatType.RoleId,roleId, content, type,new Action(()=> 
+                await Jyx2_UIManager.Instance.ShowUIAsync(nameof(ChatUIPanel), ChatType.RoleId, roleId, content, type, new Action(() =>
                 {
                     storyEngine.BlockPlayerControl = false;
                     Next();
                 }));
-            });
+            }
+
+            RunInMainThread(Run);
             
             Wait();
         }
@@ -276,9 +279,13 @@ namespace Jyx2
         {
             //防止死亡后传送到enterTrigger再次触发事件。临时处理办法
             ModifyEvent(-2, -2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
-            RunInMainThread(() => {
-                Jyx2_UIManager.Instance.ShowUI(nameof(GameOver));
-            });
+
+            async void Run()
+            {
+                await Jyx2_UIManager.Instance.ShowUIAsync(nameof(GameOver));
+            }
+
+            RunInMainThread(Run);
         }
 
         public static bool HaveItem(int itemId)
@@ -916,13 +923,8 @@ namespace Jyx2
         {
             RunInMainThread(()=>
             {
-                string path = "Assets/BuildSource/sound/e" +
-                    (waveIndex < 10 ? ("0" + waveIndex.ToString()) : waveIndex.ToString()) + ".wav";
-
-                Jyx2ResourceHelper.LoadAsset<AudioClip>(path, clip =>
-                {
-                    AudioSource.PlayClipAtPoint(clip, Camera.main.transform.position);
-                });
+                string path = "Assets/BuildSource/sound/e" + (waveIndex < 10 ? ("0" + waveIndex.ToString()) : waveIndex.ToString()) + ".wav";
+                AudioManager.PlayClipAtPoint(path, Camera.main.transform.position).Forget();
             });
         }
 
@@ -1018,11 +1020,25 @@ namespace Jyx2
 
                 if (count < 0)
                 {
-                    storyEngine.DisplayPopInfo("失去物品:" + item.Name + "×" + Math.Abs(count));
+                    //---------------------------------------------------------------------------
+                    //storyEngine.DisplayPopInfo("失去物品:" + item.Name + "×" + Math.Abs(count));
+                    //---------------------------------------------------------------------------
+                    //特定位置的翻译【得到物品提示】
+                    //---------------------------------------------------------------------------
+                    storyEngine.DisplayPopInfo("失去物品:".GetContent(nameof(Jyx2LuaBridge)) + item.Name + "×" + Math.Abs(count));
+                    //---------------------------------------------------------------------------
+                    //---------------------------------------------------------------------------
                 }
                 else
                 {
-                    storyEngine.DisplayPopInfo("得到物品:" + item.Name + "×" + Math.Abs(count));
+                    //---------------------------------------------------------------------------
+                    //storyEngine.DisplayPopInfo("得到物品:" + item.Name + "×" + Math.Abs(count));
+                    //---------------------------------------------------------------------------
+                    //特定位置的翻译【得到物品提示】
+                    //---------------------------------------------------------------------------
+                    storyEngine.DisplayPopInfo("得到物品:".GetContent(nameof(Jyx2LuaBridge)) + item.Name + "×" + Math.Abs(count));
+                    //---------------------------------------------------------------------------
+                    //---------------------------------------------------------------------------
                 }
 
                 runtime.AddItem(itemId, count);
@@ -1048,7 +1064,7 @@ namespace Jyx2
         //韦小宝商店
         public static void WeiShop()
         {
-            RunInMainThread(() =>
+            async void Action()
             {
                 if (LevelMaster.Instance.IsInWorldMap)
                 {
@@ -1066,8 +1082,10 @@ namespace Jyx2
                     return;
                 }
 
-                Jyx2_UIManager.Instance.ShowUI(nameof(ShopUIPanel), "", new Action(()=>{Next();}));
-            });
+                await Jyx2_UIManager.Instance.ShowUIAsync(nameof(ShopUIPanel), "", new Action(() => { Next(); }));
+            }
+
+            RunInMainThread(Action);
             Wait();
         }
 
@@ -1276,9 +1294,9 @@ namespace Jyx2
                     {
                         if (clonePlayer == null)
                         {
-                            clonePlayer = GameObject.Instantiate(GameRuntimeData.Instance.Player.View.GetAnimator());
+                            clonePlayer = GameObject.Instantiate(Jyx2Player.GetPlayer().m_Animator);
                             clonePlayer.runtimeAnimatorController = null;
-                            GameRuntimeData.Instance.Player.View.gameObject.SetActive(false);
+                            Jyx2Player.GetPlayer().gameObject.SetActive(false);
                         }
 
                         DoPlayTimeline(playableDirector, clonePlayer.gameObject);
@@ -1291,7 +1309,8 @@ namespace Jyx2
                         {
                             if (playableBinding.outputTargetType == typeof(Animator))
                             {
-                                playableDirector.SetGenericBinding(playableBinding.sourceObject, GameRuntimeData.Instance.Player.View.GetAnimator().gameObject);
+                                var bindPlayerObj = Jyx2Player.GetPlayer().m_Animator.gameObject;
+                                playableDirector.SetGenericBinding(playableBinding.sourceObject, bindPlayerObj);
                             }
                         });
                     }
@@ -1349,9 +1368,11 @@ namespace Jyx2
                 playableDiretor.stopped -= TimeLineNext;
                 timeLineObj.gameObject.SetActive(false);
 
-                GameRuntimeData.Instance.Player.View.gameObject.SetActive(true);
-                GameRuntimeData.Instance.Player.View.GetAnimator().transform.localPosition = Vector3.zero;
-                GameRuntimeData.Instance.Player.View.GetAnimator().transform.localRotation = Quaternion.Euler(Vector3.zero);
+                var player = Jyx2Player.GetPlayer();
+                
+                player.gameObject.SetActive(true);
+                player.m_Animator.transform.localPosition = Vector3.zero;
+                player.m_Animator.transform.localRotation = Quaternion.Euler(Vector3.zero);
                 if(clonePlayer != null)
                 {
                     GameObject.Destroy(clonePlayer.gameObject);
@@ -1386,7 +1407,7 @@ namespace Jyx2
         /// </summary>
         /// <param name="rolePath"></param>
         /// <param name="animationControllerPath"></param>
-        public static void jyx2_SwitchRoleAnimation(string rolePath, string animationControllerPath)
+        public static void jyx2_SwitchRoleAnimation(string rolePath, string animationControllerPath, string scene = "")
         {
             Debug.Log("jyx2_SwitchRoleAnimation called");
 
@@ -1400,7 +1421,7 @@ namespace Jyx2
                     return;
                 }
 
-                level.ReplaceNpcAnimatorController("", rolePath, animationControllerPath);
+                level.ReplaceNpcAnimatorController(scene, rolePath, animationControllerPath);
                 Next();
             });
             Wait();
@@ -1448,11 +1469,39 @@ namespace Jyx2
         public static void jyx2_ShowEndScene()
         {
             DarkScence();
-            RunInMainThread(() => {
-                Jyx2_UIManager.Instance.ShowUI(nameof(TheEnd));
-            });
+
+            async void Action()
+            {
+                await Jyx2_UIManager.Instance.ShowUIAsync(nameof(TheEnd));
+            }
+
+            RunInMainThread(Action);
             jyx2_Wait(1);
             LightScence();
+        }
+
+        public static void jyx2_SetFlag(string flagKey, string value)
+        {
+            runtime.SetKeyValues(GetCustomerFlagPrefix(flagKey), value);
+        }
+
+        public static string jyx2_GetFlag(string flagKey)
+        {
+            if(runtime.KeyExist(GetCustomerFlagPrefix(flagKey)))
+                return runtime.GetKeyValues(GetCustomerFlagPrefix(flagKey));
+            return "";
+        }
+        
+        public static void jyx2_SetFlagInt(string flagKey, int value)
+        {
+            runtime.SetKeyValues(GetCustomerFlagPrefix(flagKey), value.ToString());
+        }
+
+        public static int jyx2_GetFlagInt(string flagKey)
+        {
+            if(runtime.KeyExist(GetCustomerFlagPrefix(flagKey)))
+                return int.Parse(runtime.GetKeyValues(GetCustomerFlagPrefix(flagKey)));
+            return 0;
         }
 
         #endregion
@@ -1460,6 +1509,11 @@ namespace Jyx2
 
         #region private
 
+        private static string GetCustomerFlagPrefix(string flag)
+        {
+            return "CustomerFlag_" + flag;
+        }
+        
         private static void RunInMainThread(Action run)
         {
             Loom.QueueOnMainThread(_ =>
@@ -1488,17 +1542,19 @@ namespace Jyx2
 
         private static bool ShowYesOrNoSelectPanel(string selectMessage)
         {
-            RunInMainThread(() =>
+            async void Action()
             {
-                List<string> selectionContent = new List<string>() { "是(Y)", "否(N)" };
+                List<string> selectionContent = new List<string>() {"是(Y)", "否(N)"};
                 storyEngine.BlockPlayerControl = true;
-                Jyx2_UIManager.Instance.ShowUI(nameof(ChatUIPanel), ChatType.Selection, "0", selectMessage, selectionContent, new Action<int>((index) =>
+                await Jyx2_UIManager.Instance.ShowUIAsync(nameof(ChatUIPanel), ChatType.Selection, "0", selectMessage, selectionContent, new Action<int>((index) =>
                 {
                     _selectResult = index;
                     storyEngine.BlockPlayerControl = false;
                     Next();
                 }));
-            });
+            }
+
+            RunInMainThread(Action);
 
             Wait();
             return _selectResult == 0;

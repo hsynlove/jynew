@@ -13,6 +13,7 @@ using Cysharp.Threading.Tasks;
 
 using Jyx2;
 using Jyx2.Middleware;
+using Jyx2.MOD;
 using Jyx2Configs;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -35,6 +36,10 @@ public class LevelMasterBooster : MonoBehaviour
 
     private async void Awake()
     {
+#if UNITY_EDITOR
+        BeforeSceneLoad.ColdBind();
+#endif
+        
         await BeforeSceneLoad.loadFinishTask;
 
         //实例化LevelMaster
@@ -69,7 +74,7 @@ public class LevelMasterBooster : MonoBehaviour
         }
 
         //设置所有的场景变更
-        RefreshSceneObjects();
+        await RefreshSceneObjects();
 
 
         //所有改变的物体
@@ -78,7 +83,7 @@ public class LevelMasterBooster : MonoBehaviour
             obj.Reload();
         }
         
-        Jyx2_UIManager.Instance.ShowMainUI();
+        await Jyx2_UIManager.Instance.ShowMainUI();
     }
 
     public void ReplaceSceneObject(string scene, string path, string replace)
@@ -132,7 +137,7 @@ public class LevelMasterBooster : MonoBehaviour
         return battleLoader != null;
     }
 
-    public void RefreshSceneObjects()
+    public async UniTask RefreshSceneObjects()
     {
         if (IsBattle())
             return;
@@ -184,8 +189,8 @@ public class LevelMasterBooster : MonoBehaviour
 
                 try
                 {
-                    Jyx2ResourceHelper.LoadAsset<RuntimeAnimatorController>(animationControllerPath,
-                        rst => { animator.runtimeAnimatorController = rst; });
+                    animator.runtimeAnimatorController =
+                        await MODLoader.LoadAsset<RuntimeAnimatorController>(animationControllerPath);
                 }
                 catch
                 {

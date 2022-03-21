@@ -28,15 +28,15 @@ namespace Jyx2
 
         //使用的招式
         [XmlIgnore]
-        public BattleZhaoshiInstance Zhaoshi;
+        public SkillCastInstance SkillCast;
         
         [XmlAttribute("skill")]
-        public string zhaoshiPK
+        public string skillCastPK
         {
             get
             {
-                if (Zhaoshi == null) return string.Empty;
-                return Zhaoshi.Data.Key.ToString();
+                if (SkillCast == null) return string.Empty;
+                return SkillCast.Data.Key.ToString();
             }
             set { }
         }
@@ -64,12 +64,12 @@ namespace Jyx2
     {
         public SkillCastResult() { }
 
-        public SkillCastResult(RoleInstance sprite, RoleInstance target, BattleZhaoshiInstance tzhaoshi, int targetx, int targety)
+        public SkillCastResult(RoleInstance sprite, RoleInstance target, SkillCastInstance tSkillCast, int targetx, int targety)
         {
             //self = new SkillCastRoleEffect(sprite);
             r1 = sprite;
             r2 = target;
-            zhaoshi = tzhaoshi;
+            skillCast = tSkillCast;
             skilltarget_x = targetx;
             skilltarget_y = targety;
         }
@@ -78,7 +78,7 @@ namespace Jyx2
         public int skilltarget_y;
 
         [XmlIgnore]
-        public BattleZhaoshiInstance zhaoshi;
+        public SkillCastInstance skillCast;
 
         [XmlIgnore]
         public RoleInstance r1;
@@ -122,8 +122,6 @@ namespace Jyx2
         /// <summary>
         /// 具体执行改逻辑
         /// 战斗经验计算公式可以参考：https://github.com/ZhanruiLiang/jinyong-legend
-        ///
-        /// 
         /// </summary>
         /// <returns></returns>
         public void Run()
@@ -135,7 +133,7 @@ namespace Jyx2
 
                 if (r2.View != null)
                 {
-                    r2.View.SetDamage(rst.damage, r2.Hp);
+                    r2.View.SetDamage(rst.damage);
                 }
 
                 r1.ExpGot += 2 + rst.damage / 5;
@@ -148,8 +146,6 @@ namespace Jyx2
                 {
                     r2.Hp = r2.MaxHp;
                 }
-
-                r1.ExpGot += 2;
             }
 
             if (rst.damageMp > 0)
@@ -173,8 +169,6 @@ namespace Jyx2
                         r1.Mp = finalMp;
                     }
                 }
-
-                r1.ExpGot += 2;
             }
 
             if (rst.poison > 0)
